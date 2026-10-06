@@ -13,9 +13,11 @@ import { PhaseEndedOverlay } from "@/components/pomodoro/phase-ended-overlay";
 import { focusEndedTitle, nextBreakText } from "@/lib/pomodoro/messages";
 import {
   closeFocusEndedNotification,
+  getNotificationStatus,
   notifyFocusEnded,
 } from "@/lib/pomodoro/notifications";
 import { lastActivityStore, timerStore } from "@/lib/pomodoro/store";
+import { showTabTitleSignal } from "@/lib/pomodoro/tab-title";
 import {
   type TimerActivity,
   type TimerState,
@@ -115,6 +117,15 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (status !== "ended") closeFocusEndedNotification();
   }, [status]);
+
+  // Without desktop notifications the tab title carries the message instead,
+  // until the message is acknowledged.
+  const endedActivityName = status === "ended" ? state.activity?.name : undefined;
+  useEffect(() => {
+    if (endedActivityName === undefined) return;
+    if (getNotificationStatus() === "granted") return;
+    return showTabTitleSignal(focusEndedTitle(endedActivityName));
+  }, [endedActivityName]);
 
   const start = useCallback((activity?: TimerActivity) => {
     update((current) => startPhase(current, Date.now(), activity));
