@@ -52,6 +52,30 @@ export const timerStore = createLocalStore("pomodoro-timer");
 /** The id of the activity used for the last focus period. */
 export const lastActivityStore = createLocalStore("pomodoro-last-activity");
 
+/** Completed focus periods not yet in the database, as JSON (see `parseUnsaved`). */
+export const unsavedFocusStore = createLocalStore("pomodoro-unsaved");
+
+/**
+ * Why the last attempt to save a completed focus period failed, or null. Kept
+ * in memory only: a reload tries the save again.
+ */
+export const saveFailureStore = (() => {
+  const listeners = new Set<Listener>();
+  let message: string | null = null;
+  return {
+    read: () => message,
+    write(value: string | null): void {
+      if (value === message) return;
+      message = value;
+      listeners.forEach((listener) => listener());
+    },
+    subscribe(listener: Listener): () => void {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+})();
+
 const CLOCK_STEP_MS = 250;
 
 /** A clock for rendering countdowns; the snapshot changes every 250ms. */

@@ -103,6 +103,15 @@ export function PomodoroTimer({ activities }: { activities: ActivitySummary[] })
           </Button>
         )}
 
+        {timer.saveError && (
+          <div role="alert" className="flex flex-col items-center gap-2">
+            <p className="max-w-sm text-sm text-destructive">{timer.saveError}</p>
+            <Button size="sm" variant="outline" onClick={timer.retrySave}>
+              Retry
+            </Button>
+          </div>
+        )}
+
         <NotificationStatus />
       </CardContent>
     </Card>

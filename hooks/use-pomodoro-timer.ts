@@ -8,7 +8,8 @@ import { remainingMs } from "@/lib/pomodoro/timer";
 
 /** The app-wide timer (see `PomodoroProvider`) with a ticking countdown. */
 export function usePomodoroTimer() {
-  const { state, start, cancel, acknowledge } = usePomodoroContext();
+  const { state, start, cancel, acknowledge, saveError, retrySave } =
+    usePomodoroContext();
   const now = useSyncExternalStore(
     clock.subscribe,
     clock.read,
@@ -26,6 +27,8 @@ export function usePomodoroTimer() {
     start,
     cancel,
     acknowledge,
+    saveError,
+    retrySave,
   };
 }
 

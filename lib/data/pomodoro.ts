@@ -33,6 +33,11 @@ export async function recordCompletedFocus(
   return { ok: true };
 }
 
+/** The number of Pomodoros completed on `date`, a `YYYY-MM-DD` day. */
+export function countPomodorosOn(date: string): Promise<number> {
+  return db.pomodoroSession.count({ where: { date } });
+}
+
 function hasPrismaCode(error: unknown, code: string): boolean {
   return (
     typeof error === "object" &&
