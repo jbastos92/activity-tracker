@@ -10,6 +10,11 @@ import {
 } from "react";
 
 import { PhaseEndedOverlay } from "@/components/pomodoro/phase-ended-overlay";
+import { focusEndedTitle, nextBreakText } from "@/lib/pomodoro/messages";
+import {
+  closeFocusEndedNotification,
+  notifyFocusEnded,
+} from "@/lib/pomodoro/notifications";
 import { lastActivityStore, timerStore } from "@/lib/pomodoro/store";
 import {
   type TimerActivity,
@@ -48,6 +53,15 @@ function completeIfFinished(): void {
   const now = Date.now();
   if (!isFinished(current, now) || current.endsAt === null) return;
   update(complete);
+  // Only a focus period leaves an "ended" state behind; a break ends silently.
+  // A second tab finds the state already "ended" above and gets no further.
+  const ended = readState();
+  if (ended.status === "ended" && ended.activity) {
+    notifyFocusEnded(
+      focusEndedTitle(ended.activity.name),
+      nextBreakText(ended.completedFocusCount),
+    );
+  }
   console.info(
     `[pomodoro] ${current.phase} ended: detected at ${new Date(now).toISOString()}, ` +
       `${now - current.endsAt}ms after endsAt`,
@@ -95,6 +109,12 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener("focus", completeIfFinished);
     };
   }, [status, endsAt]);
+
+  // Once the message is acknowledged, in this tab or another, the
+  // notification has nothing left to say.
+  useEffect(() => {
+    if (status !== "ended") closeFocusEndedNotification();
+  }, [status]);
 
   const start = useCallback((activity?: TimerActivity) => {
     update((current) => startPhase(current, Date.now(), activity));
