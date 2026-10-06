@@ -267,7 +267,7 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - Unit tests cover the transitions running, ended, acknowledged for focus, and running to next phase for breaks; `npm test` exits with code 0.
 **Done notes**: `PomodoroProvider` wraps the header and pages in the root layout and is the only place the end is detected; `usePomodoroTimer` now reads it through context and only adds the ticking countdown. `lib/pomodoro/timer.ts` and its tests needed no change (see Task 3.1). A new worker is created for each running phase and terminated when it ends; if the worker cannot be created, a page timeout is used instead. Checked in Chrome on `/habits` with the tab hidden and a focus period ending 6 seconds after a reload: the end was logged 6ms after `endsAt` and the saved state became "ended". The full 25-minute hidden-tab check has not been run yet.
 
-### [ ] Task 3.8: Full-screen end-of-focus message
+### [x] Task 3.8: Full-screen end-of-focus message
 **Description**: Show a full-screen overlay (shadcn/ui Dialog) whenever a focus period is in the "ended" state, naming the activity and saying what comes next, with one button to continue.
 **Files**: `components/pomodoro/phase-ended-overlay.tsx`, `components/pomodoro/pomodoro-provider.tsx`, `lib/pomodoro/messages.ts`
 **Acceptance criteria**:
@@ -279,6 +279,7 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - With the app open in two tabs, pressing Continue in one closes the overlay in the other.
 - Keyboard focus moves to the Continue button when the overlay opens, and a screen reader announces the message.
 - No sound is played.
+**Done notes**: The provider renders the overlay, so it appears in every section. The overlay has no open or close animation. `lib/pomodoro/messages.ts` also exports the message as one line for Tasks 3.10 and 3.11, with unit tests in `messages.test.ts`. Checked in Chrome with a saved "ended" state: the overlay fills the viewport on `/exercise` after a reload and on `/habits`, shows the short-break and long-break texts, ignores Escape and outside clicks, puts keyboard focus on Continue, and Continue in one tab closed it in a second tab and left the break waiting for Start. The dialog has a title and description for screen readers, but it was not tried with a real screen reader.
 
 ### [ ] Task 3.9: Ask for notification permission on first Start
 **Description**: Ask Chrome for permission to show desktop notifications the first time the user presses Start, and handle a refusal.

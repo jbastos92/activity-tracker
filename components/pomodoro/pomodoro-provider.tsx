@@ -9,6 +9,7 @@ import {
   useSyncExternalStore,
 } from "react";
 
+import { PhaseEndedOverlay } from "@/components/pomodoro/phase-ended-overlay";
 import { lastActivityStore, timerStore } from "@/lib/pomodoro/store";
 import {
   type TimerActivity,
@@ -108,7 +109,10 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <PomodoroContext.Provider value={value}>{children}</PomodoroContext.Provider>
+    <PomodoroContext.Provider value={value}>
+      {children}
+      <PhaseEndedOverlay state={state} onContinue={acknowledge} />
+    </PomodoroContext.Provider>
   );
 }
 
