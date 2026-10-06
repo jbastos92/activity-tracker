@@ -254,7 +254,7 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - `npm test` exits with code 0.
 **Done notes**: Checked in Chrome: Start disabled until an activity is chosen, the message with a link when there are no activities, the last-used activity preselected after a reload, and nothing preselected when the last-used id no longer exists.
 
-### [ ] Task 3.7: Run the timer app-wide and detect the end on time
+### [x] Task 3.7: Run the timer app-wide and detect the end on time
 **Description**: Move the timer into a provider mounted in the root layout so it runs in every section, add an "ended, waiting to be acknowledged" state for focus periods, and detect the end from the stored end timestamp even when the tab is in the background.
 **Files**: `components/pomodoro/pomodoro-provider.tsx`, `lib/pomodoro/end-timer.worker.ts`, `hooks/use-pomodoro-timer.ts`, `lib/pomodoro/timer.ts`, `lib/pomodoro/timer.test.ts`, `components/pomodoro/pomodoro-timer.tsx`, `app/layout.tsx`
 **Acceptance criteria**:
@@ -265,6 +265,7 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - Timing check: start a focus period, switch to another tab and leave the app's tab hidden for the whole period (use the real 25 minutes at least once). The app logs the detection time to the console; it is within 5 seconds of `endsAt` in current desktop Chrome.
 - If the computer was asleep or the browser closed at `endsAt`, the end is detected as soon as the page runs again.
 - Unit tests cover the transitions running, ended, acknowledged for focus, and running to next phase for breaks; `npm test` exits with code 0.
+**Done notes**: `PomodoroProvider` wraps the header and pages in the root layout and is the only place the end is detected; `usePomodoroTimer` now reads it through context and only adds the ticking countdown. `lib/pomodoro/timer.ts` and its tests needed no change (see Task 3.1). A new worker is created for each running phase and terminated when it ends; if the worker cannot be created, a page timeout is used instead. Checked in Chrome on `/habits` with the tab hidden and a focus period ending 6 seconds after a reload: the end was logged 6ms after `endsAt` and the saved state became "ended". The full 25-minute hidden-tab check has not been run yet.
 
 ### [ ] Task 3.8: Full-screen end-of-focus message
 **Description**: Show a full-screen overlay (shadcn/ui Dialog) whenever a focus period is in the "ended" state, naming the activity and saying what comes next, with one button to continue.
