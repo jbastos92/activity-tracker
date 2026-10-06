@@ -281,7 +281,7 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - No sound is played.
 **Done notes**: The provider renders the overlay, so it appears in every section. The overlay has no open or close animation. `lib/pomodoro/messages.ts` also exports the message as one line for Tasks 3.10 and 3.11, with unit tests in `messages.test.ts`. Checked in Chrome with a saved "ended" state: the overlay fills the viewport on `/exercise` after a reload and on `/habits`, shows the short-break and long-break texts, ignores Escape and outside clicks, puts keyboard focus on Continue, and Continue in one tab closed it in a second tab and left the break waiting for Start. The dialog has a title and description for screen readers, but it was not tried with a real screen reader.
 
-### [ ] Task 3.9: Ask for notification permission on first Start
+### [x] Task 3.9: Ask for notification permission on first Start
 **Description**: Ask Chrome for permission to show desktop notifications the first time the user presses Start, and handle a refusal.
 **Files**: `lib/pomodoro/notifications.ts`, `components/pomodoro/pomodoro-timer.tsx`, `components/pomodoro/notification-status.tsx`
 **Acceptance criteria**:
@@ -290,6 +290,7 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - When permission is denied or unavailable, `/pomodoro` shows a short note: desktop notifications are off, the tab title will signal the end instead, and they can be enabled in Chrome's site settings. The app does not ask again by itself.
 - `lib/pomodoro/notifications.ts` exports a function returning one of `granted`, `denied`, `default`, `unsupported`, and nothing throws when the Notification API is missing.
 - Check all three outcomes by resetting the site permission in Chrome's site settings.
+**Done notes**: `notifications.ts` exports `getNotificationStatus`, `requestNotificationPermission` (prompts only while permission is undecided) and `subscribeToNotificationStatus`, with unit tests in `notifications.test.ts`. Start calls the request and starts the timer without waiting for the answer. The note is rendered at the bottom of the timer card and re-reads the permission after the prompt is answered and whenever the window regains focus; it has a separate text for a browser without the Notification API. Dismissing the prompt leaves permission undecided, so the next Start asks again. The owner checked all three outcomes (allow, block, dismiss) in Chrome.
 
 ### [ ] Task 3.10: Desktop notification when a focus period ends out of sight
 **Description**: When a focus period ends while the tab is hidden or the window is not focused, show a desktop notification with the same message as the overlay; clicking it brings the tab to the front.
