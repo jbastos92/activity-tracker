@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// A named activity that Pomodoros are counted against, for example "Read".
+model Activity {
+  id         String    @id @default(cuid())
+  name       String
+  // The name trimmed and lower-cased. SQLite has no case-insensitive unique
+  // filter in Prisma, so uniqueness ignoring case is enforced on this column.
+  nameKey    String    @unique
+  // Set when the owner removes the activity; rows are never deleted.
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  sessions PomodoroSession[]
+}
+
+// One completed focus period. Breaks are not stored.
+model PomodoroSession {
+  id              String   @id @default(cuid())
+  activityId      String
+  activity        Activity @relation(fields: [activityId], references: [id], onDelete: Restrict)
+  // Unique so that saving the same focus period twice leaves one row.
+  startedAt       DateTime @unique
+  endedAt         DateTime
+  durationSeconds Int
+  // The user's local calendar day, YYYY-MM-DD.
+  date            String
+  createdAt       DateTime @default(now())
+
+  @@index([date])
+}
+
+model Habit {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  completions HabitCompletion[]
+}
+
+// The habit was done on the given day. No row means not done.
+model HabitCompletion {
+  id        String   @id @default(cuid())
+  habitId   String
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  // The user's local calendar day, YYYY-MM-DD.
+  date      String
+  createdAt DateTime @default(now())
+
+  @@unique([habitId, date])
+}
+
+// One logged exercise session. `activity` is free text and is unrelated to
+// the Activity model used by Pomodoros.
+model ExerciseEntry {
+  id              String   @id @default(cuid())
+  // The user's local calendar day, YYYY-MM-DD.
+  date            String
+  activity        String
+  durationMinutes Int
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  @@index([date])
+}
