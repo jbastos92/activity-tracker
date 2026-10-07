@@ -111,8 +111,7 @@ describe("exerciseEntrySchema", () => {
 
   describe("notes", () => {
     it("are optional: missing, null or blank become null", () => {
-      const { notes: _notes, ...withoutNotes } = valid;
-      expect(schema.parse(withoutNotes).notes).toBeNull();
+      expect(schema.parse({ ...valid, notes: undefined }).notes).toBeNull();
       expect(schema.parse({ ...valid, notes: null }).notes).toBeNull();
       expect(schema.parse({ ...valid, notes: "   " }).notes).toBeNull();
     });
