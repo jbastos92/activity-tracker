@@ -435,13 +435,14 @@ Owner requirement: "It also tracks habits". Everything more specific below is an
 
 Owner requirement: "It also tracks ... exercise.", confirmed by the owner as a "simple log". The exact fields of a log entry are still an assumption **(A-11)**.
 
-### [ ] Task 5.1: Exercise data functions and validation
+### [x] Task 5.1: Exercise data functions and validation
 **Description**: Implement the data functions and zod schema for exercise entries.
 **Files**: `lib/data/exercise.ts`, `lib/validation/exercise.ts`, `lib/validation/exercise.test.ts`
 **Acceptance criteria**:
 - Functions exist for: list entries (newest date first, then newest created first), create, update, delete.
 - Validation: `activity` trimmed, 1 to 80 characters; `durationMinutes` a whole number from 1 to 1440; `date` a valid `YYYY-MM-DD` that is not after today; `notes` optional, at most 500 characters **(A-12)**.
 - Unit tests cover each rule; `npm test` exits with code 0.
+**Done notes**: `lib/validation/exercise.ts` exports `exerciseEntrySchema(today)`, a function that builds the schema, because the date rule needs the user's local today; the caller passes `getToday()`. Each field has its own message, and all invalid fields are reported together, for the inline messages of Task 5.2. `durationMinutes` also accepts a number typed as text, as a form sends it; text that is not a number, a blank and a missing value give "Enter the duration in minutes.", and 12.5 gives "Use whole minutes.". Notes are trimmed, and blank, missing or null notes become null. The limits are exported as `EXERCISE_ACTIVITY_MAX` (80), `EXERCISE_DURATION_MAX` (1440) and `EXERCISE_NOTES_MAX` (500). `lib/data/exercise.ts` has `listExerciseEntries(limit)` (the caller chooses how many; Task 5.3 passes 50), `createExerciseEntry(entry)`, `updateExerciseEntry(id, entry)`, which returns null for an unknown entry, and `deleteExerciseEntry(id)`, harmless when the entry is already gone; an entry is `id`, `date`, `activity`, `durationMinutes` and `notes`. The data functions were checked with a temporary test against a copy of the local database, removed afterwards: the stored fields, the list order (newest date first, then newest created first) and its limit, update, and delete.
 
 ### [ ] Task 5.2: Log an exercise entry
 **Description**: Build the form on `/exercise` to log an entry: date, activity, duration in minutes, optional notes.
