@@ -389,7 +389,7 @@ Owner requirement: "It also tracks habits". Everything more specific below is an
 - Unit tests cover the validation rules; `npm test` exits with code 0.
 **Done notes**: `lib/data/habits.ts` has `listHabitsWithCompletions(from, to)`, which returns every habit oldest first with `id`, `name` and `completedDays` (the `YYYY-MM-DD` days done in the range, both ends included, oldest first); `createHabit(name)`; `renameHabit(id, name)`, which returns null for an unknown habit; `deleteHabit(id)`, harmless when the habit is already gone; and `setHabitCompletion({ habitId, date, done })`, which returns `{ ok: true }` or `{ ok: false, reason: "not-found" }` when marking an unknown habit done. Habit names are not unique: two habits may have the same name. `lib/validation/habits.ts` has `habitNameSchema` (`HABIT_NAME_MAX` is 80) and `habitCompletionSchema`, which also rejects a date that is not a real `YYYY-MM-DD` day and a `done` that is not a boolean; it does not limit how old the date is (the 7-day limit of A-9 is left to Task 4.5). The data functions were checked with a temporary test against a copy of the local database, removed afterwards: listing order and range, done twice in a row and twice at the same moment leaves one row, not-done twice leaves none, an unknown habit is refused and writes nothing, rename, and delete removing the completions.
 
-### [ ] Task 4.2: Habits page with list and create form
+### [x] Task 4.2: Habits page with list and create form
 **Description**: Build `/habits` showing all habits and a form to add one.
 **Files**: `app/habits/page.tsx`, `app/habits/actions.ts`, `components/habits/habit-form.tsx`, `components/habits/habit-list.tsx`
 **Acceptance criteria**:
@@ -397,6 +397,7 @@ Owner requirement: "It also tracks habits". Everything more specific below is an
 - Submitting a blank name shows an inline validation message and creates nothing.
 - Habits are listed oldest first; with none, the text "No habits yet" is shown.
 - Habits remain after a page reload.
+**Done notes**: The page reads the habits with `listHabitsWithCompletions(today, today)` and is `force-dynamic`, so it reads the database on every request. `createHabitAction` in `app/habits/actions.ts` validates the name with `habitNameSchema`, returns the message and the typed text when it is invalid, and calls `revalidatePath("/habits")` after saving. The form is the same pattern as the activity form: a visible label "New habit", the message under the field, and the field cleared by React after a successful submit. The list is a server component for now; Task 4.3 adds the rows with their actions. No unit tests were added: there is no new pure logic, and the name rules are covered by the tests of Task 4.1. Checked in Chrome with two temporary habits, deleted afterwards: "No habits yet" with none; a blank name showed "Enter a name." and created nothing; a name typed with outer spaces was added trimmed with no page reload and the field was cleared; the second habit was listed below the first; both were still there after a reload; no console messages and no sideways scrolling. Checked in the dark theme at desktop width only; the light theme and 375px width were not looked at.
 
 ### [ ] Task 4.3: Rename and delete a habit
 **Description**: Add rename and delete actions to each habit row.
