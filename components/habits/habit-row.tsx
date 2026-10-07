@@ -21,31 +21,50 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import type { HabitSummary } from "@/lib/data/habits";
+import type { HabitSummary, HabitWithCompletions } from "@/lib/data/habits";
+import type { HabitDay } from "@/lib/habits/days";
+import { cn } from "@/lib/utils";
 import { HABIT_NAME_MAX } from "@/lib/validation/habits";
+
+// The 7 day columns; the header and every row use it so the columns line up.
+// It scrolls sideways by itself if the screen is too narrow for it.
+const DAY_GRID = "grid w-full max-w-xs min-w-56 grid-cols-7";
+const DAY_CELL = "flex flex-col items-center justify-center rounded-md py-1.5";
+const TODAY_CELL = "bg-muted font-semibold text-foreground";
+
+export function HabitDaysHeader({ days }: { days: HabitDay[] }) {
+  return (
+    <div className="overflow-x-auto border-b px-3 py-2">
+      <div className={cn(DAY_GRID, "text-xs text-muted-foreground")}>
+        {days.map((day) => (
+          <div key={day.date} className={cn(DAY_CELL, day.isToday && TODAY_CELL)}>
+            <span>{day.weekday}</span>
+            <span>{day.dayNumber}</span>
+            {day.isToday && <span className="sr-only">(today)</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function HabitRow({
   habit,
-  today,
-  doneToday,
+  days,
 }: {
-  habit: HabitSummary;
-  // The user's local day, `YYYY-MM-DD`.
-  today: string;
-  doneToday: boolean;
+  habit: HabitWithCompletions;
+  // The last 7 days, today last.
+  days: HabitDay[];
 }) {
   const [editing, setEditing] = useState(false);
 
   return (
-    <li className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+    <li className="flex flex-col gap-2 px-3 py-2">
       {editing ? (
         <RenameForm habit={habit} onDone={() => setEditing(false)} />
       ) : (
-        <>
-          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-            <TodayCheckbox habit={habit} today={today} done={doneToday} />
-            <span className="min-w-0 break-words font-medium">{habit.name}</span>
-          </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="min-w-0 break-words font-medium">{habit.name}</span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
               Rename
@@ -53,59 +72,92 @@ export function HabitRow({
             </Button>
             <DeleteDialog habit={habit} />
           </div>
-        </>
+        </div>
       )}
+      <DayCheckboxes habit={habit} days={days} />
     </li>
   );
 }
 
-function TodayCheckbox({
+function DayCheckboxes({
   habit,
-  today,
+  days,
+}: {
+  habit: HabitWithCompletions;
+  days: HabitDay[];
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const errorId = `completion-error-${habit.id}`;
+
+  return (
+    <>
+      <div className="overflow-x-auto">
+        <div className={DAY_GRID}>
+          {days.map((day) => (
+            <div key={day.date} className={cn(DAY_CELL, day.isToday && TODAY_CELL)}>
+              <DayCheckbox
+                habit={habit}
+                day={day}
+                done={habit.completedDays.includes(day.date)}
+                errorId={error ? errorId : undefined}
+                onResult={setError}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+      {error && (
+        <p id={errorId} role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+    </>
+  );
+}
+
+function DayCheckbox({
+  habit,
+  day,
   done,
+  errorId,
+  onResult,
 }: {
   habit: HabitSummary;
-  today: string;
+  day: HabitDay;
   done: boolean;
+  errorId: string | undefined;
+  // Called with the error message of a save, or null when it starts or succeeds.
+  onResult: (error: string | null) => void;
 }) {
   // Shows the new state at once; falls back to the saved one if saving fails.
   const [shownDone, setShownDone] = useOptimistic(done);
-  const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
-  const errorId = `completion-error-${habit.id}`;
+  const when = day.isToday ? "today" : `on ${day.weekday} ${day.dayNumber}`;
 
   function toggle(next: boolean) {
     startTransition(async () => {
       setShownDone(next);
-      setError(null);
+      onResult(null);
       try {
         const result = await setHabitCompletionAction({
           habitId: habit.id,
-          date: today,
+          date: day.date,
           done: next,
         });
-        if (!result.ok) setError(result.error);
+        if (!result.ok) onResult(result.error);
       } catch {
-        setError("This could not be saved. Try again.");
+        onResult("This could not be saved. Try again.");
       }
     });
   }
 
   return (
-    <>
-      <Checkbox
-        checked={shownDone}
-        onCheckedChange={(value) => toggle(value === true)}
-        aria-label={`${habit.name}: done today`}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : undefined}
-      />
-      {error && (
-        <p id={errorId} role="alert" className="order-last w-full text-sm text-destructive">
-          {error}
-        </p>
-      )}
-    </>
+    <Checkbox
+      checked={shownDone}
+      onCheckedChange={(value) => toggle(value === true)}
+      aria-label={`${habit.name}: done ${when}`}
+      aria-describedby={errorId}
+    />
   );
 }
 

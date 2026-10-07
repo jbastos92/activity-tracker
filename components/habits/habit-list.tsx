@@ -1,28 +1,27 @@
-import { HabitRow } from "@/components/habits/habit-row";
+import { HabitDaysHeader, HabitRow } from "@/components/habits/habit-row";
 import type { HabitWithCompletions } from "@/lib/data/habits";
+import type { HabitDay } from "@/lib/habits/days";
 
 export function HabitList({
   habits,
-  today,
+  days,
 }: {
   habits: HabitWithCompletions[];
-  // The user's local day, `YYYY-MM-DD`.
-  today: string;
+  // The last 7 days, today last.
+  days: HabitDay[];
 }) {
   if (habits.length === 0) {
     return <p className="text-sm text-muted-foreground">No habits yet</p>;
   }
 
   return (
-    <ul className="divide-y rounded-lg border">
-      {habits.map((habit) => (
-        <HabitRow
-          key={habit.id}
-          habit={habit}
-          today={today}
-          doneToday={habit.completedDays.includes(today)}
-        />
-      ))}
-    </ul>
+    <div className="rounded-lg border">
+      <HabitDaysHeader days={days} />
+      <ul className="divide-y">
+        {habits.map((habit) => (
+          <HabitRow key={habit.id} habit={habit} days={days} />
+        ))}
+      </ul>
+    </div>
   );
 }

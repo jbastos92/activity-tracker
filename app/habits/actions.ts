@@ -8,6 +8,8 @@ import {
   renameHabit,
   setHabitCompletion,
 } from "@/lib/data/habits";
+import { isEditableHabitDay } from "@/lib/habits/days";
+import { getToday } from "@/lib/today";
 import {
   habitCompletionSchema,
   habitNameSchema,
@@ -47,7 +49,7 @@ export async function deleteHabitAction(id: string): Promise<void> {
 
 export type HabitCompletionResult = { ok: true } | { ok: false; error: string };
 
-/** Marks a habit done or not done on a `YYYY-MM-DD` day. */
+/** Marks a habit done or not done on one of the last 7 days (A-9). */
 export async function setHabitCompletionAction(input: {
   habitId: string;
   date: string;
@@ -55,6 +57,9 @@ export async function setHabitCompletionAction(input: {
 }): Promise<HabitCompletionResult> {
   const parsed = habitCompletionSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "This could not be saved." };
+  if (!isEditableHabitDay(parsed.data.date, await getToday())) {
+    return { ok: false, error: "Only the last 7 days can be changed." };
+  }
 
   const result = await setHabitCompletion(parsed.data);
   revalidatePath("/habits");
