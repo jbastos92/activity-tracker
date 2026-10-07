@@ -379,7 +379,7 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 
 Owner requirement: "It also tracks habits". Everything more specific below is an assumption.
 
-### [ ] Task 4.1: Habit data functions and validation
+### [x] Task 4.1: Habit data functions and validation
 **Description**: Implement the data functions for habits and completions, and the zod schemas for their input.
 **Files**: `lib/data/habits.ts`, `lib/validation/habits.ts`, `lib/validation/habits.test.ts`
 **Acceptance criteria**:
@@ -387,6 +387,7 @@ Owner requirement: "It also tracks habits". Everything more specific below is an
 - Setting a completion is idempotent: marking done twice leaves one row, marking not-done twice leaves none.
 - A habit name is trimmed, must be 1 to 80 characters, and a blank name is rejected.
 - Unit tests cover the validation rules; `npm test` exits with code 0.
+**Done notes**: `lib/data/habits.ts` has `listHabitsWithCompletions(from, to)`, which returns every habit oldest first with `id`, `name` and `completedDays` (the `YYYY-MM-DD` days done in the range, both ends included, oldest first); `createHabit(name)`; `renameHabit(id, name)`, which returns null for an unknown habit; `deleteHabit(id)`, harmless when the habit is already gone; and `setHabitCompletion({ habitId, date, done })`, which returns `{ ok: true }` or `{ ok: false, reason: "not-found" }` when marking an unknown habit done. Habit names are not unique: two habits may have the same name. `lib/validation/habits.ts` has `habitNameSchema` (`HABIT_NAME_MAX` is 80) and `habitCompletionSchema`, which also rejects a date that is not a real `YYYY-MM-DD` day and a `done` that is not a boolean; it does not limit how old the date is (the 7-day limit of A-9 is left to Task 4.5). The data functions were checked with a temporary test against a copy of the local database, removed afterwards: listing order and range, done twice in a row and twice at the same moment leaves one row, not-done twice leaves none, an unknown habit is refused and writes nothing, rename, and delete removing the completions.
 
 ### [ ] Task 4.2: Habits page with list and create form
 **Description**: Build `/habits` showing all habits and a form to add one.
