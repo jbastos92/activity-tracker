@@ -2,8 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 
-import { createHabit, deleteHabit, renameHabit } from "@/lib/data/habits";
-import { habitNameSchema } from "@/lib/validation/habits";
+import {
+  createHabit,
+  deleteHabit,
+  renameHabit,
+  setHabitCompletion,
+} from "@/lib/data/habits";
+import {
+  habitCompletionSchema,
+  habitNameSchema,
+} from "@/lib/validation/habits";
 
 export type HabitFormState = {
   error: string | null;
@@ -35,6 +43,23 @@ export async function renameHabitAction(
 export async function deleteHabitAction(id: string): Promise<void> {
   await deleteHabit(id);
   revalidatePath("/habits");
+}
+
+export type HabitCompletionResult = { ok: true } | { ok: false; error: string };
+
+/** Marks a habit done or not done on a `YYYY-MM-DD` day. */
+export async function setHabitCompletionAction(input: {
+  habitId: string;
+  date: string;
+  done: boolean;
+}): Promise<HabitCompletionResult> {
+  const parsed = habitCompletionSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "This could not be saved." };
+
+  const result = await setHabitCompletion(parsed.data);
+  revalidatePath("/habits");
+  if (!result.ok) return { ok: false, error: "This habit no longer exists." };
+  return { ok: true };
 }
 
 // `write` returns an error message, or null when it saved.

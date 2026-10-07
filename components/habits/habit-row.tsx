@@ -1,13 +1,15 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useOptimistic, useState, useTransition } from "react";
 
 import {
   type HabitFormState,
   deleteHabitAction,
   renameHabitAction,
+  setHabitCompletionAction,
 } from "@/app/habits/actions";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -22,7 +24,16 @@ import { Input } from "@/components/ui/input";
 import type { HabitSummary } from "@/lib/data/habits";
 import { HABIT_NAME_MAX } from "@/lib/validation/habits";
 
-export function HabitRow({ habit }: { habit: HabitSummary }) {
+export function HabitRow({
+  habit,
+  today,
+  doneToday,
+}: {
+  habit: HabitSummary;
+  // The user's local day, `YYYY-MM-DD`.
+  today: string;
+  doneToday: boolean;
+}) {
   const [editing, setEditing] = useState(false);
 
   return (
@@ -31,7 +42,10 @@ export function HabitRow({ habit }: { habit: HabitSummary }) {
         <RenameForm habit={habit} onDone={() => setEditing(false)} />
       ) : (
         <>
-          <span className="min-w-0 break-words font-medium">{habit.name}</span>
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+            <TodayCheckbox habit={habit} today={today} done={doneToday} />
+            <span className="min-w-0 break-words font-medium">{habit.name}</span>
+          </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
               Rename
@@ -42,6 +56,56 @@ export function HabitRow({ habit }: { habit: HabitSummary }) {
         </>
       )}
     </li>
+  );
+}
+
+function TodayCheckbox({
+  habit,
+  today,
+  done,
+}: {
+  habit: HabitSummary;
+  today: string;
+  done: boolean;
+}) {
+  // Shows the new state at once; falls back to the saved one if saving fails.
+  const [shownDone, setShownDone] = useOptimistic(done);
+  const [error, setError] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+  const errorId = `completion-error-${habit.id}`;
+
+  function toggle(next: boolean) {
+    startTransition(async () => {
+      setShownDone(next);
+      setError(null);
+      try {
+        const result = await setHabitCompletionAction({
+          habitId: habit.id,
+          date: today,
+          done: next,
+        });
+        if (!result.ok) setError(result.error);
+      } catch {
+        setError("This could not be saved. Try again.");
+      }
+    });
+  }
+
+  return (
+    <>
+      <Checkbox
+        checked={shownDone}
+        onCheckedChange={(value) => toggle(value === true)}
+        aria-label={`${habit.name}: done today`}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+      />
+      {error && (
+        <p id={errorId} role="alert" className="order-last w-full text-sm text-destructive">
+          {error}
+        </p>
+      )}
+    </>
   );
 }
 

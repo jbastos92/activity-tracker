@@ -18,7 +18,7 @@ export default async function HabitsPage() {
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold">Habits</h1>
       <HabitForm />
-      <HabitList habits={habits} />
+      <HabitList habits={habits} today={today} />
     </div>
   );
 }
