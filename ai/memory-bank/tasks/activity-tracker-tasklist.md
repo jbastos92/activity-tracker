@@ -444,7 +444,7 @@ Owner requirement: "It also tracks ... exercise.", confirmed by the owner as a "
 - Unit tests cover each rule; `npm test` exits with code 0.
 **Done notes**: `lib/validation/exercise.ts` exports `exerciseEntrySchema(today)`, a function that builds the schema, because the date rule needs the user's local today; the caller passes `getToday()`. Each field has its own message, and all invalid fields are reported together, for the inline messages of Task 5.2. `durationMinutes` also accepts a number typed as text, as a form sends it; text that is not a number, a blank and a missing value give "Enter the duration in minutes.", and 12.5 gives "Use whole minutes.". Notes are trimmed, and blank, missing or null notes become null. The limits are exported as `EXERCISE_ACTIVITY_MAX` (80), `EXERCISE_DURATION_MAX` (1440) and `EXERCISE_NOTES_MAX` (500). `lib/data/exercise.ts` has `listExerciseEntries(limit)` (the caller chooses how many; Task 5.3 passes 50), `createExerciseEntry(entry)`, `updateExerciseEntry(id, entry)`, which returns null for an unknown entry, and `deleteExerciseEntry(id)`, harmless when the entry is already gone; an entry is `id`, `date`, `activity`, `durationMinutes` and `notes`. The data functions were checked with a temporary test against a copy of the local database, removed afterwards: the stored fields, the list order (newest date first, then newest created first) and its limit, update, and delete.
 
-### [ ] Task 5.2: Log an exercise entry
+### [x] Task 5.2: Log an exercise entry
 **Description**: Build the form on `/exercise` to log an entry: date, activity, duration in minutes, optional notes.
 **Files**: `app/exercise/page.tsx`, `app/exercise/actions.ts`, `components/exercise/exercise-form.tsx`
 **Acceptance criteria**:
@@ -452,8 +452,9 @@ Owner requirement: "It also tracks ... exercise.", confirmed by the owner as a "
 - Submitting valid values creates the entry and clears the activity, duration and notes fields.
 - Each invalid field shows its own inline message and nothing is saved.
 - Every field has a visible label and the form can be completed with the keyboard only.
+**Done notes**: Tasks 5.2 to 5.4 were built in one go. `app/exercise/actions.ts` has `createExerciseEntryAction`: it reads the four fields as text, validates them with `exerciseEntrySchema(await getToday())`, returns the first message of each invalid field together with what was typed, and calls `revalidatePath("/exercise")` after saving. `components/exercise/exercise-form.tsx` has the labels "Date", "Duration (minutes)", "Activity" and "Notes (optional)" and the button "Log exercise"; date and duration share a line from the `sm` width up. The date is a native date field limited to today, the duration a native number field, and the notes the shadcn/ui Textarea (`npx shadcn add textarea`, extra file `components/ui/textarea.tsx`; it added no package). The form has `noValidate`, so the messages under the fields are the app's own and not the browser's bubbles. After a successful submit the date is kept and the other three fields are cleared; after an invalid one every field keeps what was typed. The page is `force-dynamic`. No unit tests were added for the form or the action: the rules are covered by the tests of Task 5.1. Checked in Chrome with temporary entries, deleted afterwards: the date defaulted to the local today (2026-10-07); a future date, a blank activity, a duration of 0 and notes of 501 characters each showed their own message and nothing was saved; a valid entry was saved with the activity trimmed, and activity, duration and notes were cleared; no console messages. At a 375px-wide frame the fields stack and the page does not scroll sideways. Not checked: completing the form with the keyboard only (the automation tool does not deliver key presses; the fields and the button are native controls in tab order), and the light theme.
 
-### [ ] Task 5.3: Exercise entry list
+### [x] Task 5.3: Exercise entry list
 **Description**: List logged entries below the form.
 **Files**: `components/exercise/exercise-list.tsx`, `app/exercise/page.tsx`
 **Acceptance criteria**:
@@ -461,8 +462,9 @@ Owner requirement: "It also tracks ... exercise.", confirmed by the owner as a "
 - A new entry appears in the list without a full page reload.
 - The 50 most recent entries are shown **(A-13)**; with none, the text "No exercise logged yet" is shown.
 - No totals, charts or statistics are shown.
+**Done notes**: Extra files: `lib/exercise/list.ts` with unit tests in `list.test.ts`. It exports `EXERCISE_LIST_LIMIT` (50), `groupEntriesByDate`, which turns the sorted entries into one group per date with a heading such as "Wed 7 Oct 2026", and `formatDuration` ("1 minute", "45 minutes"). The page reads the 50 most recent entries and `exercise-list.tsx`, a server component, renders one section per date with the date as an `h2` and the entries in a bordered list. Each entry shows the activity, the duration after a dot, and the notes below when present, with their line breaks kept. Checked in Chrome with temporary entries, deleted afterwards: "No exercise logged yet" with none; a new entry appeared with no page reload; two dates gave two headings, newest date first, and on the same date the newest entry came first; notes of two lines showed as two lines. Limit checked by adding 55 more rows straight into the database and requesting the page: 50 entries were shown and the oldest date was left out.
 
-### [ ] Task 5.4: Edit and delete an exercise entry
+### [x] Task 5.4: Edit and delete an exercise entry
 **Description**: Add edit and delete actions to each entry.
 **Files**: `components/exercise/exercise-row.tsx`, `components/exercise/exercise-form.tsx`, `components/exercise/exercise-list.tsx`, `app/exercise/actions.ts`
 **Acceptance criteria**:
@@ -471,6 +473,7 @@ Owner requirement: "It also tracks ... exercise.", confirmed by the owner as a "
 - Delete asks for confirmation; confirming removes the entry, cancelling changes nothing.
 - Changes remain after a page reload.
 - The standard checks pass. This completes the app.
+**Done notes**: `components/exercise/exercise-row.tsx` is a client component with the entry, the Edit dialog and the Delete dialog. Edit opens a dialog titled "Edit entry" with the form of Task 5.2 filled with the entry and a "Save" button; `ExerciseForm` takes an optional `entry` and `onSaved`, and the dialog closes when the change is saved. `updateExerciseEntryAction` uses the same validation as create and returns "This entry no longer exists." when the entry is gone; `deleteExerciseEntryAction` deletes and revalidates. The delete dialog names the activity and its duration and says it cannot be undone. Checked in Chrome with temporary entries, deleted afterwards: the dialog opened with the entry's values; a blank activity and a duration of 2000 showed their messages, kept the dialog open and changed nothing; changing the date, activity and duration and clearing the notes was saved, the dialog closed and the entry moved under the other date's heading; Cancel in the delete dialog left the entry in place; confirming removed it; the edit and the deletion were still there after a reload and in the database. The standard checks pass. Not checked: the light theme, and the dialogs at 375px width.
 
 ---
 
