@@ -20,6 +20,13 @@ export const STATS_DAYS = 14;
 export const STATS_WEEKS = 12;
 export const STATS_MONTHS = 12;
 
+export type StatsPeriod = "day" | "week" | "month";
+
+/** The period chosen in the URL (`?period=week`); anything else means "day". */
+export function parseStatsPeriod(value: string | null | undefined): StatsPeriod {
+  return value === "week" || value === "month" ? value : "day";
+}
+
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [

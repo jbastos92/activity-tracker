@@ -361,7 +361,7 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - With no activities, the text "No pomodoros recorded yet" is shown. It is a table, not a chart **(A-25)**.
 **Done notes**: The table is a plain HTML table styled with Tailwind under the heading "Totals per activity", below the timer and today's count; no shadcn table component was added. Which rows are shown and their order come from `activityTotalRows` in `lib/pomodoro/stats.ts`, with unit tests; equal counts are ordered by name ignoring upper and lower case. The empty text is shown when there is no row at all: no active activity and no removed one with Pomodoros. Checked in Chrome with temporary rows, deleted afterwards: the order was Read 2, "Old thing (removed)" 1, then the two activities with 0 by name, and a total of 3; a removed activity with no Pomodoros was not listed; after a focus period for Study ended, its row went to 1 and the total to 4 with no reload; the page did not scroll sideways. Not checked in Chrome: the empty text, because the owner's activities were left in place.
 
-### [ ] Task 3.16: Pomodoros per day, week and month
+### [x] Task 3.16: Pomodoros per day, week and month
 **Description**: Show a plain table of the number of Pomodoros per period, with a selector for Day, Week or Month.
 **Files**: `components/pomodoro/period-counts.tsx`, `app/pomodoro/page.tsx`, `components/ui/tabs.tsx`
 **Acceptance criteria**:
@@ -371,6 +371,7 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - Check with data: add `PomodoroSession` rows in `npx prisma studio` with dates in different weeks and months, and the three views show the expected counts.
 - It is a table, not a chart, and no chart library is installed **(A-25)**.
 - The standard checks pass.
+**Done notes**: The section is headed "Pomodoros per period" and sits below the totals per activity. The selector is the shadcn/ui Tabs component (`npx shadcn add tabs`; it added no package). The page loads the counts for all three views with one query and passes them to the client component, so switching does not call the server; the choice is written to the URL with `history.replaceState` and read with `useSearchParams`. Day is the default and has no parameter: choosing Day removes `period` from the URL, and any unknown value means Day (`parseStatsPeriod` in `lib/pomodoro/stats.ts`, unit-tested). The current period is the first row, marked with a background and bold text. Checked in Chrome with temporary rows in different weeks and months, deleted afterwards, instead of Prisma Studio: Day showed 14 rows, Week 12 and Month 12 with the expected counts in each (a Sunday counted in the week before, a day 12 weeks back and a day 11 months back included, a day one month further back left out); the URL became `?period=week` and `?period=month`, and `/pomodoro` again for Day; a reload on `?period=week` opened on Week; the header link to `/pomodoro` went back to Day; no sideways scrolling. Checked in the dark theme at desktop width only; the light theme and 375px width were not looked at.
 
 ---
 

@@ -7,6 +7,7 @@ import {
   countsByMonth,
   countsByWeek,
   earliestStatsDay,
+  parseStatsPeriod,
 } from "@/lib/pomodoro/stats";
 
 // 6 October 2026 is a Tuesday.
@@ -202,5 +203,21 @@ describe("activityTotalRows", () => {
     activityTotalRows(totals);
 
     expect(totals.map((total) => total.name)).toEqual(["Read", "Study"]);
+  });
+});
+
+describe("parseStatsPeriod", () => {
+  it("accepts day, week and month", () => {
+    expect(parseStatsPeriod("day")).toBe("day");
+    expect(parseStatsPeriod("week")).toBe("week");
+    expect(parseStatsPeriod("month")).toBe("month");
+  });
+
+  it("falls back to day for anything else", () => {
+    expect(parseStatsPeriod(null)).toBe("day");
+    expect(parseStatsPeriod(undefined)).toBe("day");
+    expect(parseStatsPeriod("")).toBe("day");
+    expect(parseStatsPeriod("year")).toBe("day");
+    expect(parseStatsPeriod("Week")).toBe("day");
   });
 });
