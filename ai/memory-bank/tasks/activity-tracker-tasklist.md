@@ -350,7 +350,7 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - `npm test` exits with code 0.
 **Done notes**: `lib/data/pomodoro.ts` has `countPomodorosByActivity()`, which returns every activity with `id`, `name`, `removed` and `count` (0 when it has none), oldest first, so Task 3.15 does the sorting and hides removed activities with no Pomodoros; and `countPomodorosByDate(from, to)`, which returns an object of counts keyed by day, both ends included, without the days that have none. `lib/pomodoro/stats.ts` has `countsByDay`, `countsByWeek` and `countsByMonth`, each taking those counts and today, plus `earliestStatsDay(today)`, the first day the page has to ask the database for (the first day of the month 11 months back). Labels are built in the module, without `Intl`: "Tue 6 Oct", "5 Oct to 11 Oct", "October 2026". The current week and month run to their last day even when that is after today. An invalid `today` gives an empty list. The two queries were checked against the local database with a temporary test that removed its own rows.
 
-### [ ] Task 3.15: Totals per activity
+### [x] Task 3.15: Totals per activity
 **Description**: Show a plain table of how many Pomodoros have been completed for each activity.
 **Files**: `components/pomodoro/activity-totals.tsx`, `app/pomodoro/page.tsx`
 **Acceptance criteria**:
@@ -359,6 +359,7 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - Active activities with no Pomodoros are listed with 0. A removed activity is listed only if it has Pomodoros, with "(removed)" after its name **(A-24)**.
 - After a focus period completes, the count for its activity goes up by one without a manual reload.
 - With no activities, the text "No pomodoros recorded yet" is shown. It is a table, not a chart **(A-25)**.
+**Done notes**: The table is a plain HTML table styled with Tailwind under the heading "Totals per activity", below the timer and today's count; no shadcn table component was added. Which rows are shown and their order come from `activityTotalRows` in `lib/pomodoro/stats.ts`, with unit tests; equal counts are ordered by name ignoring upper and lower case. The empty text is shown when there is no row at all: no active activity and no removed one with Pomodoros. Checked in Chrome with temporary rows, deleted afterwards: the order was Read 2, "Old thing (removed)" 1, then the two activities with 0 by name, and a total of 3; a removed activity with no Pomodoros was not listed; after a focus period for Study ended, its row went to 1 and the total to 4 with no reload; the page did not scroll sideways. Not checked in Chrome: the empty text, because the owner's activities were left in place.
 
 ### [ ] Task 3.16: Pomodoros per day, week and month
 **Description**: Show a plain table of the number of Pomodoros per period, with a selector for Day, Week or Month.

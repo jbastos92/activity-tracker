@@ -88,6 +88,22 @@ export function earliestStatsDay(today: string): string | null {
   return toDay(new Date(Math.min(...starts.map((start) => start.getTime()))));
 }
 
+/**
+ * The rows of the totals table: highest count first, then by name. A removed
+ * activity is listed only if it has Pomodoros (A-24).
+ */
+export function activityTotalRows<
+  T extends { name: string; removed: boolean; count: number },
+>(totals: T[]): T[] {
+  return totals
+    .filter((total) => !total.removed || total.count > 0)
+    .sort(
+      (a, b) =>
+        b.count - a.count ||
+        a.name.localeCompare(b.name, "en", { sensitivity: "base" }),
+    );
+}
+
 function period(
   label: string,
   start: Date,

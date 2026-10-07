@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   type PeriodCount,
+  activityTotalRows,
   countsByDay,
   countsByMonth,
   countsByWeek,
@@ -163,5 +164,43 @@ describe("earliestStatsDay", () => {
 
   it("is null when today is not a real day", () => {
     expect(earliestStatsDay("2026-13-01")).toBeNull();
+  });
+});
+
+describe("activityTotalRows", () => {
+  const activity = (name: string, count: number, removed = false) => ({
+    id: name,
+    name,
+    removed,
+    count,
+  });
+
+  it("puts the highest count first", () => {
+    const rows = activityTotalRows([activity("Read", 2), activity("Study", 7), activity("Write", 4)]);
+
+    expect(rows.map((row) => row.name)).toEqual(["Study", "Write", "Read"]);
+  });
+
+  it("orders equal counts by name, ignoring upper and lower case", () => {
+    const rows = activityTotalRows([activity("write", 3), activity("Study", 3), activity("read", 3)]);
+
+    expect(rows.map((row) => row.name)).toEqual(["read", "Study", "write"]);
+  });
+
+  it("keeps an active activity that has no Pomodoros", () => {
+    expect(activityTotalRows([activity("Read", 0)])).toEqual([activity("Read", 0)]);
+  });
+
+  it("keeps a removed activity only when it has Pomodoros", () => {
+    const rows = activityTotalRows([activity("Old", 0, true), activity("Older", 5, true)]);
+
+    expect(rows).toEqual([activity("Older", 5, true)]);
+  });
+
+  it("does not change the list it was given", () => {
+    const totals = [activity("Read", 1), activity("Study", 2)];
+    activityTotalRows(totals);
+
+    expect(totals.map((total) => total.name)).toEqual(["Read", "Study"]);
   });
 });

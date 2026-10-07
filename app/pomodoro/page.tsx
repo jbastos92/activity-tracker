@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { ActivityTotals } from "@/components/pomodoro/activity-totals";
 import { PomodoroTimer } from "@/components/pomodoro/pomodoro-timer";
 import { TodaySummary } from "@/components/pomodoro/today-summary";
 import { listActiveActivities } from "@/lib/data/activities";
-import { countPomodorosOn } from "@/lib/data/pomodoro";
+import {
+  countPomodorosByActivity,
+  countPomodorosOn,
+} from "@/lib/data/pomodoro";
 import { getToday } from "@/lib/today";
 
 export const metadata: Metadata = { title: "Pomodoro" };
@@ -13,9 +17,10 @@ export const metadata: Metadata = { title: "Pomodoro" };
 export const dynamic = "force-dynamic";
 
 export default async function PomodoroPage() {
-  const [activities, todayCount] = await Promise.all([
+  const [activities, todayCount, activityTotals] = await Promise.all([
     listActiveActivities(),
     getToday().then(countPomodorosOn),
+    countPomodorosByActivity(),
   ]);
 
   return (
@@ -31,6 +36,7 @@ export default async function PomodoroPage() {
       </div>
       <PomodoroTimer activities={activities} />
       <TodaySummary count={todayCount} />
+      <ActivityTotals totals={activityTotals} />
     </div>
   );
 }
