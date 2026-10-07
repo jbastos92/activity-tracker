@@ -254,7 +254,7 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - `npm test` exits with code 0.
 **Done notes**: Checked in Chrome: Start disabled until an activity is chosen, the message with a link when there are no activities, the last-used activity preselected after a reload, and nothing preselected when the last-used id no longer exists.
 
-### [ ] Task 3.7: Run the timer app-wide and detect the end on time
+### [x] Task 3.7: Run the timer app-wide and detect the end on time
 **Description**: Move the timer into a provider mounted in the root layout so it runs in every section, add an "ended, waiting to be acknowledged" state for focus periods, and detect the end from the stored end timestamp even when the tab is in the background.
 **Files**: `components/pomodoro/pomodoro-provider.tsx`, `lib/pomodoro/end-timer.worker.ts`, `hooks/use-pomodoro-timer.ts`, `lib/pomodoro/timer.ts`, `lib/pomodoro/timer.test.ts`, `components/pomodoro/pomodoro-timer.tsx`, `app/layout.tsx`
 **Acceptance criteria**:
@@ -265,8 +265,9 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - Timing check: start a focus period, switch to another tab and leave the app's tab hidden for the whole period (use the real 25 minutes at least once). The app logs the detection time to the console; it is within 5 seconds of `endsAt` in current desktop Chrome.
 - If the computer was asleep or the browser closed at `endsAt`, the end is detected as soon as the page runs again.
 - Unit tests cover the transitions running, ended, acknowledged for focus, and running to next phase for breaks; `npm test` exits with code 0.
+**Done notes**: `PomodoroProvider` wraps the header and pages in the root layout and is the only place the end is detected; `usePomodoroTimer` now reads it through context and only adds the ticking countdown. `lib/pomodoro/timer.ts` and its tests needed no change (see Task 3.1). A new worker is created for each running phase and terminated when it ends; if the worker cannot be created, a page timeout is used instead. Checked in Chrome on `/habits` with the tab hidden and a focus period ending 6 seconds after a reload: the end was logged 6ms after `endsAt` and the saved state became "ended". The full 25-minute hidden-tab check has not been run yet.
 
-### [ ] Task 3.8: Full-screen end-of-focus message
+### [x] Task 3.8: Full-screen end-of-focus message
 **Description**: Show a full-screen overlay (shadcn/ui Dialog) whenever a focus period is in the "ended" state, naming the activity and saying what comes next, with one button to continue.
 **Files**: `components/pomodoro/phase-ended-overlay.tsx`, `components/pomodoro/pomodoro-provider.tsx`, `lib/pomodoro/messages.ts`
 **Acceptance criteria**:
@@ -278,8 +279,9 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - With the app open in two tabs, pressing Continue in one closes the overlay in the other.
 - Keyboard focus moves to the Continue button when the overlay opens, and a screen reader announces the message.
 - No sound is played.
+**Done notes**: The provider renders the overlay, so it appears in every section. The overlay has no open or close animation. `lib/pomodoro/messages.ts` also exports the message as one line for Tasks 3.10 and 3.11, with unit tests in `messages.test.ts`. Checked in Chrome with a saved "ended" state: the overlay fills the viewport on `/exercise` after a reload and on `/habits`, shows the short-break and long-break texts, ignores Escape and outside clicks, puts keyboard focus on Continue, and Continue in one tab closed it in a second tab and left the break waiting for Start. The dialog has a title and description for screen readers, but it was not tried with a real screen reader.
 
-### [ ] Task 3.9: Ask for notification permission on first Start
+### [x] Task 3.9: Ask for notification permission on first Start
 **Description**: Ask Chrome for permission to show desktop notifications the first time the user presses Start, and handle a refusal.
 **Files**: `lib/pomodoro/notifications.ts`, `components/pomodoro/pomodoro-timer.tsx`, `components/pomodoro/notification-status.tsx`
 **Acceptance criteria**:
@@ -288,8 +290,9 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - When permission is denied or unavailable, `/pomodoro` shows a short note: desktop notifications are off, the tab title will signal the end instead, and they can be enabled in Chrome's site settings. The app does not ask again by itself.
 - `lib/pomodoro/notifications.ts` exports a function returning one of `granted`, `denied`, `default`, `unsupported`, and nothing throws when the Notification API is missing.
 - Check all three outcomes by resetting the site permission in Chrome's site settings.
+**Done notes**: `notifications.ts` exports `getNotificationStatus`, `requestNotificationPermission` (prompts only while permission is undecided) and `subscribeToNotificationStatus`, with unit tests in `notifications.test.ts`. Start calls the request and starts the timer without waiting for the answer. The note is rendered at the bottom of the timer card and re-reads the permission after the prompt is answered and whenever the window regains focus; it has a separate text for a browser without the Notification API. Dismissing the prompt leaves permission undecided, so the next Start asks again. The owner checked all three outcomes (allow, block, dismiss) in Chrome.
 
-### [ ] Task 3.10: Desktop notification when a focus period ends out of sight
+### [x] Task 3.10: Desktop notification when a focus period ends out of sight
 **Description**: When a focus period ends while the tab is hidden or the window is not focused, show a desktop notification with the same message as the overlay; clicking it brings the tab to the front.
 **Files**: `lib/pomodoro/notifications.ts`, `components/pomodoro/pomodoro-provider.tsx`
 **Acceptance criteria**:
@@ -300,8 +303,9 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - No notification is shown when the tab is visible and focused at the end; the overlay alone is enough.
 - With the app open in two tabs only one notification is visible (use the same notification `tag` in both).
 - No service worker and no push server are used; nothing is shown if Chrome is closed **(A-21)**.
+**Done notes**: `notifications.ts` exports `notifyFocusEnded(title, body)`: it shows the notification only when permission is granted and the tab is hidden or the window is not focused, sets a fixed `tag`, and on click calls `window.focus()` and closes the notification. The title is the "Focus time is over: Read" line and the body is the "Next: ..." line from `lib/pomodoro/messages.ts`. The provider calls it from the single place where the end is detected, only when the state becomes "ended" (so never for a break). A second tab normally finds the state already "ended" and shows nothing; the shared tag covers the case where both detect the end at the same moment. The notification uses `requireInteraction: true`, so it stays on screen until the owner acts on it: on the owner's Mac the ordinary banner never appeared although Chrome reported it as shown and Chrome was allowed in System Settings, and the persistent kind did appear. Because it stays, `closeFocusEndedNotification()` takes it away once the state leaves "ended" (Continue pressed in any tab). Unit tests in `notifications.test.ts` cover all of this. Checked in Chrome: with the tab hidden the app created the notification 6ms after `endsAt`, and the owner confirmed the notification appears. Not yet checked: Chrome minimised, the click bringing the tab forward, two tabs showing one notification, and the real 25-minute hidden-tab timing.
 
-### [ ] Task 3.11: Tab title signal when notifications are not available
+### [x] Task 3.11: Tab title signal when notifications are not available
 **Description**: When a focus period ends out of sight and notifications are denied, undecided or unavailable, change the tab title to a marker plus the message until the user returns.
 **Files**: `lib/pomodoro/tab-title.ts`, `components/pomodoro/pomodoro-provider.tsx`
 **Acceptance criteria**:
@@ -311,8 +315,9 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - Navigating between sections while the marker is set does not leave a wrong title behind after it is cleared.
 - With permission granted the title is not changed; the notification from Task 3.10 is used instead.
 - The standard checks pass.
+**Done notes**: `tab-title.ts` exports `showTabTitleSignal(message)`: it changes the title only when the tab is hidden or the window is not focused, and returns a function that puts the original title back, with unit tests in `tab-title.test.ts`. The provider runs it from an effect while the state is "ended" and notification permission is anything but granted, so it also applies in a second tab and after a reload in a hidden tab; the effect's cleanup restores the title when the state leaves "ended". The restore only acts if the title is still the marker, so a section opened meanwhile keeps its own title; opening a section while the marker is set replaces the marker with that section's title. Checked in Chrome with the tab hidden and the permission made to read as denied inside the page (the site permission itself was left as granted): the title became "(!) Focus time is over: Read - Activity Tracker" and returned to "Habits - Activity Tracker" after Continue; after moving to `/exercise` with the marker set and pressing Continue the title was "Exercise - Activity Tracker"; a break ending left the title unchanged. Not checked in Chrome: a really denied site permission, and that the title stays unchanged when permission is granted (the code skips the title in that case).
 
-### [ ] Task 3.12: Record a completed focus period
+### [x] Task 3.12: Record a completed focus period
 **Description**: Add the data function and server action that store a completed focus period against its activity, safely against duplicates.
 **Files**: `lib/data/pomodoro.ts`, `app/pomodoro/actions.ts`, `lib/validation/pomodoro.ts`, `lib/validation/pomodoro.test.ts`
 **Acceptance criteria**:
@@ -321,8 +326,9 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - The write is an upsert on `startedAt`: calling the action twice with the same `startedAt` leaves exactly one row (check in `npx prisma studio`).
 - The action calls `revalidatePath('/pomodoro')`.
 - Unit tests cover the validation rules; `npm test` exits with code 0.
+**Done notes**: The action is `recordCompletedFocusAction(input)` in `app/pomodoro/actions.ts`; it takes one object with `activityId`, `startedAt` and `endedAt` in epoch milliseconds (the timer's own unit) and `date`, and returns `{ ok: true }` or `{ ok: false, error }` with a message for Task 3.13 to show. `completedFocusSchema` in `lib/validation/pomodoro.ts` also rejects an end equal to the start, and the tolerance over the focus length is 5 seconds (`FOCUS_DURATION_TOLERANCE_MS`). `recordCompletedFocus` in `lib/data/pomodoro.ts` looks the activity up by id whether or not it is removed, upserts on `startedAt`, and treats a unique-constraint error from two simultaneous saves as success. The data function was checked against the local database with a temporary test instead of Prisma Studio; it cleaned up its own rows: an unknown activity is refused and writes nothing, the same period saved twice in a row and twice at the same moment leaves one row each, the stored columns are right, and a removed activity is accepted. The action itself has not been called yet; nothing calls it until Task 3.13.
 
-### [ ] Task 3.13: Save on completion and show today's count
+### [x] Task 3.13: Save on completion and show today's count
 **Description**: Call the record action from the app-wide provider when a focus period finishes, and show today's number of Pomodoros under the timer.
 **Files**: `components/pomodoro/pomodoro-provider.tsx`, `components/pomodoro/pomodoro-timer.tsx`, `hooks/use-pomodoro-timer.ts`, `components/pomodoro/today-summary.tsx`, `app/pomodoro/page.tsx`, `lib/data/pomodoro.ts`
 **Acceptance criteria**:
@@ -331,8 +337,9 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - With the app open in two tabs, a finished focus period is still recorded only once.
 - The page shows "Today: N pomodoros" using the user's local day (Task 2.1), and it updates without a manual reload after a focus period completes. Minutes are not shown: the unit is the count.
 - If saving fails, an inline error message with a Retry button is shown and the Pomodoro is not silently lost.
+**Done notes**: Extra files: `lib/pomodoro/unsaved.ts` with unit tests in `unsaved.test.ts`, and two more stores in `lib/pomodoro/store.ts`. When the provider detects the end of a focus period it first adds the Pomodoro to a list of unsaved ones in `localStorage` (key `pomodoro-unsaved`), then calls the record action and takes it off the list once saved. A Pomodoro still on the list is sent again on the next page load, so it survives a failed save, a reload or a closed tab; `endedAt` is always the stored `endsAt` and `date` is the local day of that end, taken from the browser's time zone. After a failure nothing is retried by itself until Retry or a reload. The error and Retry button are on the timer card on `/pomodoro` only. The count is read by `countPomodorosOn` and shown as "Today: N pomodoros" ("1 pomodoro"); it updates through the action's `revalidatePath`, so only in the tab that saved. Checked in Chrome with a hidden tab: a focus period ending on `/pomodoro` created one row without Continue being pressed and the count went from 0 to 1 with no reload; a page opened on `/habits` 10 minutes after `endsAt` created one row with `endedAt` equal to `endsAt`; an entry the server refused showed the message with Retry, stayed on the list, and after Retry was saved and the message went away. The test rows were deleted afterwards. Not checked in Chrome: two tabs open at the end (covered by the list ignoring duplicates and the upsert of Task 3.12), a break ending (covered by a unit test: a break gives no entry), and a save failing because the server is not running.
 
-### [ ] Task 3.14: Statistics queries and period grouping
+### [x] Task 3.14: Statistics queries and period grouping
 **Description**: Add the data functions that count Pomodoros, and pure functions that group daily counts into days, weeks and months.
 **Files**: `lib/data/pomodoro.ts`, `lib/pomodoro/stats.ts`, `lib/pomodoro/stats.test.ts`
 **Acceptance criteria**:
@@ -341,8 +348,9 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - A week runs Monday to Sunday **(A-26)**.
 - Unit tests cover: a Sunday counted in the week that began the Monday before; a week that spans two months and one that spans two years; months of 28 and 31 days; zero-filled periods; the counts of every view adding up to the input for the covered range.
 - `npm test` exits with code 0.
+**Done notes**: `lib/data/pomodoro.ts` has `countPomodorosByActivity()`, which returns every activity with `id`, `name`, `removed` and `count` (0 when it has none), oldest first, so Task 3.15 does the sorting and hides removed activities with no Pomodoros; and `countPomodorosByDate(from, to)`, which returns an object of counts keyed by day, both ends included, without the days that have none. `lib/pomodoro/stats.ts` has `countsByDay`, `countsByWeek` and `countsByMonth`, each taking those counts and today, plus `earliestStatsDay(today)`, the first day the page has to ask the database for (the first day of the month 11 months back). Labels are built in the module, without `Intl`: "Tue 6 Oct", "5 Oct to 11 Oct", "October 2026". The current week and month run to their last day even when that is after today. An invalid `today` gives an empty list. The two queries were checked against the local database with a temporary test that removed its own rows.
 
-### [ ] Task 3.15: Totals per activity
+### [x] Task 3.15: Totals per activity
 **Description**: Show a plain table of how many Pomodoros have been completed for each activity.
 **Files**: `components/pomodoro/activity-totals.tsx`, `app/pomodoro/page.tsx`
 **Acceptance criteria**:
@@ -351,8 +359,9 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - Active activities with no Pomodoros are listed with 0. A removed activity is listed only if it has Pomodoros, with "(removed)" after its name **(A-24)**.
 - After a focus period completes, the count for its activity goes up by one without a manual reload.
 - With no activities, the text "No pomodoros recorded yet" is shown. It is a table, not a chart **(A-25)**.
+**Done notes**: The table is a plain HTML table styled with Tailwind under the heading "Totals per activity", below the timer and today's count; no shadcn table component was added. Which rows are shown and their order come from `activityTotalRows` in `lib/pomodoro/stats.ts`, with unit tests; equal counts are ordered by name ignoring upper and lower case. The empty text is shown when there is no row at all: no active activity and no removed one with Pomodoros. Checked in Chrome with temporary rows, deleted afterwards: the order was Read 2, "Old thing (removed)" 1, then the two activities with 0 by name, and a total of 3; a removed activity with no Pomodoros was not listed; after a focus period for Study ended, its row went to 1 and the total to 4 with no reload; the page did not scroll sideways. Not checked in Chrome: the empty text, because the owner's activities were left in place.
 
-### [ ] Task 3.16: Pomodoros per day, week and month
+### [x] Task 3.16: Pomodoros per day, week and month
 **Description**: Show a plain table of the number of Pomodoros per period, with a selector for Day, Week or Month.
 **Files**: `components/pomodoro/period-counts.tsx`, `app/pomodoro/page.tsx`, `components/ui/tabs.tsx`
 **Acceptance criteria**:
@@ -362,6 +371,7 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 - Check with data: add `PomodoroSession` rows in `npx prisma studio` with dates in different weeks and months, and the three views show the expected counts.
 - It is a table, not a chart, and no chart library is installed **(A-25)**.
 - The standard checks pass.
+**Done notes**: The section is headed "Pomodoros per period" and sits below the totals per activity. The selector is the shadcn/ui Tabs component (`npx shadcn add tabs`; it added no package). The page loads the counts for all three views with one query and passes them to the client component, so switching does not call the server; the choice is written to the URL with `history.replaceState` and read with `useSearchParams`. Day is the default and has no parameter: choosing Day removes `period` from the URL, and any unknown value means Day (`parseStatsPeriod` in `lib/pomodoro/stats.ts`, unit-tested). The current period is the first row, marked with a background and bold text. Checked in Chrome with temporary rows in different weeks and months, deleted afterwards, instead of Prisma Studio: Day showed 14 rows, Week 12 and Month 12 with the expected counts in each (a Sunday counted in the week before, a day 12 weeks back and a day 11 months back included, a day one month further back left out); the URL became `?period=week` and `?period=month`, and `/pomodoro` again for Day; a reload on `?period=week` opened on Week; the header link to `/pomodoro` went back to Day; no sideways scrolling. Checked in the dark theme at desktop width only; the light theme and 375px width were not looked at.
 
 ---
 
@@ -369,7 +379,7 @@ Owner requirements: "It tracks work time using the Pomodoro pattern."; the end-o
 
 Owner requirement: "It also tracks habits". Everything more specific below is an assumption.
 
-### [ ] Task 4.1: Habit data functions and validation
+### [x] Task 4.1: Habit data functions and validation
 **Description**: Implement the data functions for habits and completions, and the zod schemas for their input.
 **Files**: `lib/data/habits.ts`, `lib/validation/habits.ts`, `lib/validation/habits.test.ts`
 **Acceptance criteria**:
@@ -377,8 +387,9 @@ Owner requirement: "It also tracks habits". Everything more specific below is an
 - Setting a completion is idempotent: marking done twice leaves one row, marking not-done twice leaves none.
 - A habit name is trimmed, must be 1 to 80 characters, and a blank name is rejected.
 - Unit tests cover the validation rules; `npm test` exits with code 0.
+**Done notes**: `lib/data/habits.ts` has `listHabitsWithCompletions(from, to)`, which returns every habit oldest first with `id`, `name` and `completedDays` (the `YYYY-MM-DD` days done in the range, both ends included, oldest first); `createHabit(name)`; `renameHabit(id, name)`, which returns null for an unknown habit; `deleteHabit(id)`, harmless when the habit is already gone; and `setHabitCompletion({ habitId, date, done })`, which returns `{ ok: true }` or `{ ok: false, reason: "not-found" }` when marking an unknown habit done. Habit names are not unique: two habits may have the same name. `lib/validation/habits.ts` has `habitNameSchema` (`HABIT_NAME_MAX` is 80) and `habitCompletionSchema`, which also rejects a date that is not a real `YYYY-MM-DD` day and a `done` that is not a boolean; it does not limit how old the date is (the 7-day limit of A-9 is left to Task 4.5). The data functions were checked with a temporary test against a copy of the local database, removed afterwards: listing order and range, done twice in a row and twice at the same moment leaves one row, not-done twice leaves none, an unknown habit is refused and writes nothing, rename, and delete removing the completions.
 
-### [ ] Task 4.2: Habits page with list and create form
+### [x] Task 4.2: Habits page with list and create form
 **Description**: Build `/habits` showing all habits and a form to add one.
 **Files**: `app/habits/page.tsx`, `app/habits/actions.ts`, `components/habits/habit-form.tsx`, `components/habits/habit-list.tsx`
 **Acceptance criteria**:
@@ -386,16 +397,18 @@ Owner requirement: "It also tracks habits". Everything more specific below is an
 - Submitting a blank name shows an inline validation message and creates nothing.
 - Habits are listed oldest first; with none, the text "No habits yet" is shown.
 - Habits remain after a page reload.
+**Done notes**: The page reads the habits with `listHabitsWithCompletions(today, today)` and is `force-dynamic`, so it reads the database on every request. `createHabitAction` in `app/habits/actions.ts` validates the name with `habitNameSchema`, returns the message and the typed text when it is invalid, and calls `revalidatePath("/habits")` after saving. The form is the same pattern as the activity form: a visible label "New habit", the message under the field, and the field cleared by React after a successful submit. The list is a server component for now; Task 4.3 adds the rows with their actions. No unit tests were added: there is no new pure logic, and the name rules are covered by the tests of Task 4.1. Checked in Chrome with two temporary habits, deleted afterwards: "No habits yet" with none; a blank name showed "Enter a name." and created nothing; a name typed with outer spaces was added trimmed with no page reload and the field was cleared; the second habit was listed below the first; both were still there after a reload; no console messages and no sideways scrolling. Checked in the dark theme at desktop width only; the light theme and 375px width were not looked at.
 
-### [ ] Task 4.3: Rename and delete a habit
+### [x] Task 4.3: Rename and delete a habit
 **Description**: Add rename and delete actions to each habit row.
 **Files**: `components/habits/habit-row.tsx`, `components/habits/habit-list.tsx`, `app/habits/actions.ts`
 **Acceptance criteria**:
 - Rename opens the name for editing; saving updates the row, and a blank name is rejected with a message.
 - Delete opens a confirmation dialog stating that the habit's history is removed too; confirming removes the habit and its completions, cancelling changes nothing **(A-10)**.
 - Both changes remain after a page reload.
+**Done notes**: `components/habits/habit-row.tsx` is a client component with the row, the rename form and the delete dialog, following the activity list of Task 3.5; `habit-list.tsx` stays a server component that renders the rows. `app/habits/actions.ts` gained `renameHabitAction` (same name validation as create; "This habit no longer exists." when the habit is gone) and `deleteHabitAction`, both followed by `revalidatePath("/habits")`. Rename turns the row into a field with Save and Cancel; after a rejected name the field shows the current name again with the message under it. The dialog reads "The habit's history is removed too: every day it was marked done is deleted with it. This cannot be undone." No unit tests were added: there is no new pure logic. Checked in Chrome with two temporary habits, one with a completion, removed afterwards: a blank rename showed "Enter a name." and changed nothing; a new name was saved with no page reload; Cancel in the dialog left the habit in place; confirming removed the habit and its completion row from the database; the renamed habit and the deletion were still there after a reload; no console messages. Checked in the dark theme at desktop width only; the light theme and 375px width were not looked at.
 
-### [ ] Task 4.4: Mark a habit done for today
+### [x] Task 4.4: Mark a habit done for today
 **Description**: Add a checkbox to each habit row that marks it done or not done for the user's local today.
 **Files**: `components/habits/habit-row.tsx`, `app/habits/actions.ts`, `app/habits/page.tsx`
 **Acceptance criteria**:
@@ -403,8 +416,9 @@ Owner requirement: "It also tracks habits". Everything more specific below is an
 - "Today" follows the browser time zone (Task 2.1): with the `tz` cookie set to a zone where it is already the next day, the checkboxes show as unticked.
 - The checkbox has an accessible label that includes the habit name and can be toggled with the keyboard.
 - All habits are treated as daily, done or not done **(A-8)**.
+**Done notes**: The page passes its `today` to the list, and each row gets `doneToday`. The checkbox is the shadcn/ui Checkbox in `habit-row.tsx`, to the left of the name, with the accessible label "<habit name>: done today"; it is not shown while the row is being renamed. It shows the new state at once (`useOptimistic`) and goes back to the saved state if saving fails, with a message under the name. `setHabitCompletionAction({ habitId, date, done })` in `app/habits/actions.ts` validates with `habitCompletionSchema`, calls `setHabitCompletion` and then `revalidatePath("/habits")`; the row sends the `today` the page was rendered with, so the action is ready for the past days of Task 4.5. The action accepts any real day, including a future one; it is not limited to today. No unit tests were added: there is no new pure logic. Checked in Chrome with two temporary habits, removed afterwards: ticking with the mouse showed the tick with no page reload and it was still there after a reload; unticking removed it and that also survived a reload; no console messages. Time zone checked by requesting the page with a `tz` cookie: with a completion saved for the local day 2026-10-07, `tz=America/Sao_Paulo` gave the habit ticked and `tz=Pacific/Kiritimati` (already 2026-10-08) gave every checkbox unticked. Not checked: toggling with the keyboard, because the browser automation tool did not deliver key presses to the page (the checkbox is a native button, which the space bar toggles); the failed-save message; the light theme and 375px width.
 
-### [ ] Task 4.5: Last-seven-days view per habit
+### [x] Task 4.5: Last-seven-days view per habit
 **Description**: Extend each habit row to show the last 7 days, today last, each day as a checkbox that can be toggled, so past days can be reviewed and corrected.
 **Files**: `components/habits/habit-row.tsx`, `components/habits/habit-list.tsx`, `app/habits/page.tsx`
 **Acceptance criteria**:
@@ -413,6 +427,7 @@ Owner requirement: "It also tracks habits". Everything more specific below is an
 - At 375px viewport width the 7 columns are usable with no horizontal page scrolling (the grid itself may scroll).
 - No streak counters, percentages or charts are shown.
 - The standard checks pass.
+**Done notes**: Extra files: `lib/habits/days.ts` with unit tests in `days.test.ts`. It exports `HABIT_DAYS` (7), `habitDays(today)`, which returns the last 7 days oldest first with `date`, `weekday`, `dayNumber` and `isToday`, and `isEditableHabitDay(date, today)`. The page asks the database for those 7 days and passes them to the list. The single today checkbox of Task 4.4 became 7 checkboxes per habit. Each habit is two lines: the name with Rename and Delete, then the 7 checkboxes; the header with the 7 dates sits above the first habit and uses the same 7-column grid (at most 320px wide, left-aligned), so the columns line up. Today is the last column, marked with a background in the header and in every row, and in bold in the header. The accessible labels are "<habit name>: done on Tue 6" and "<habit name>: done today". The checkboxes stay visible while the row is being renamed. `setHabitCompletionAction` now refuses a day outside the last 7 or in the future with "Only the last 7 days can be changed." (A-9), using the server's `getToday()`; a save error is shown once under the habit's checkboxes. `app/habits/actions.ts` was changed for that, although the task did not list it. Checked in Chrome with two temporary habits, removed afterwards: the header read "Thu 1" to "Wed 7" with only today marked; ticking a past day and today showed at once with no page reload and both were still there after a reload; unticking the past day removed it and that survived a reload; no console messages. Width checked by loading the page in a 375px-wide frame, because the browser window could not be resized: the page did not scroll sideways, the 7 columns fitted without the grid scrolling, and a long habit name wrapped. Not checked in Chrome: the refusal of an old or future day (covered by the unit tests of `isEditableHabitDay`), the failed-save message, toggling with the keyboard (the automation tool does not deliver key presses), and the light theme.
 
 ---
 
@@ -420,15 +435,16 @@ Owner requirement: "It also tracks habits". Everything more specific below is an
 
 Owner requirement: "It also tracks ... exercise.", confirmed by the owner as a "simple log". The exact fields of a log entry are still an assumption **(A-11)**.
 
-### [ ] Task 5.1: Exercise data functions and validation
+### [x] Task 5.1: Exercise data functions and validation
 **Description**: Implement the data functions and zod schema for exercise entries.
 **Files**: `lib/data/exercise.ts`, `lib/validation/exercise.ts`, `lib/validation/exercise.test.ts`
 **Acceptance criteria**:
 - Functions exist for: list entries (newest date first, then newest created first), create, update, delete.
 - Validation: `activity` trimmed, 1 to 80 characters; `durationMinutes` a whole number from 1 to 1440; `date` a valid `YYYY-MM-DD` that is not after today; `notes` optional, at most 500 characters **(A-12)**.
 - Unit tests cover each rule; `npm test` exits with code 0.
+**Done notes**: `lib/validation/exercise.ts` exports `exerciseEntrySchema(today)`, a function that builds the schema, because the date rule needs the user's local today; the caller passes `getToday()`. Each field has its own message, and all invalid fields are reported together, for the inline messages of Task 5.2. `durationMinutes` also accepts a number typed as text, as a form sends it; text that is not a number, a blank and a missing value give "Enter the duration in minutes.", and 12.5 gives "Use whole minutes.". Notes are trimmed, and blank, missing or null notes become null. The limits are exported as `EXERCISE_ACTIVITY_MAX` (80), `EXERCISE_DURATION_MAX` (1440) and `EXERCISE_NOTES_MAX` (500). `lib/data/exercise.ts` has `listExerciseEntries(limit)` (the caller chooses how many; Task 5.3 passes 50), `createExerciseEntry(entry)`, `updateExerciseEntry(id, entry)`, which returns null for an unknown entry, and `deleteExerciseEntry(id)`, harmless when the entry is already gone; an entry is `id`, `date`, `activity`, `durationMinutes` and `notes`. The data functions were checked with a temporary test against a copy of the local database, removed afterwards: the stored fields, the list order (newest date first, then newest created first) and its limit, update, and delete.
 
-### [ ] Task 5.2: Log an exercise entry
+### [x] Task 5.2: Log an exercise entry
 **Description**: Build the form on `/exercise` to log an entry: date, activity, duration in minutes, optional notes.
 **Files**: `app/exercise/page.tsx`, `app/exercise/actions.ts`, `components/exercise/exercise-form.tsx`
 **Acceptance criteria**:
@@ -436,8 +452,9 @@ Owner requirement: "It also tracks ... exercise.", confirmed by the owner as a "
 - Submitting valid values creates the entry and clears the activity, duration and notes fields.
 - Each invalid field shows its own inline message and nothing is saved.
 - Every field has a visible label and the form can be completed with the keyboard only.
+**Done notes**: Tasks 5.2 to 5.4 were built in one go. `app/exercise/actions.ts` has `createExerciseEntryAction`: it reads the four fields as text, validates them with `exerciseEntrySchema(await getToday())`, returns the first message of each invalid field together with what was typed, and calls `revalidatePath("/exercise")` after saving. `components/exercise/exercise-form.tsx` has the labels "Date", "Duration (minutes)", "Activity" and "Notes (optional)" and the button "Log exercise"; date and duration share a line from the `sm` width up. The date is a native date field limited to today, the duration a native number field, and the notes the shadcn/ui Textarea (`npx shadcn add textarea`, extra file `components/ui/textarea.tsx`; it added no package). The form has `noValidate`, so the messages under the fields are the app's own and not the browser's bubbles. After a successful submit the date is kept and the other three fields are cleared; after an invalid one every field keeps what was typed. The page is `force-dynamic`. No unit tests were added for the form or the action: the rules are covered by the tests of Task 5.1. Checked in Chrome with temporary entries, deleted afterwards: the date defaulted to the local today (2026-10-07); a future date, a blank activity, a duration of 0 and notes of 501 characters each showed their own message and nothing was saved; a valid entry was saved with the activity trimmed, and activity, duration and notes were cleared; no console messages. At a 375px-wide frame the fields stack and the page does not scroll sideways. Not checked: completing the form with the keyboard only (the automation tool does not deliver key presses; the fields and the button are native controls in tab order), and the light theme.
 
-### [ ] Task 5.3: Exercise entry list
+### [x] Task 5.3: Exercise entry list
 **Description**: List logged entries below the form.
 **Files**: `components/exercise/exercise-list.tsx`, `app/exercise/page.tsx`
 **Acceptance criteria**:
@@ -445,8 +462,9 @@ Owner requirement: "It also tracks ... exercise.", confirmed by the owner as a "
 - A new entry appears in the list without a full page reload.
 - The 50 most recent entries are shown **(A-13)**; with none, the text "No exercise logged yet" is shown.
 - No totals, charts or statistics are shown.
+**Done notes**: Extra files: `lib/exercise/list.ts` with unit tests in `list.test.ts`. It exports `EXERCISE_LIST_LIMIT` (50), `groupEntriesByDate`, which turns the sorted entries into one group per date with a heading such as "Wed 7 Oct 2026", and `formatDuration` ("1 minute", "45 minutes"). The page reads the 50 most recent entries and `exercise-list.tsx`, a server component, renders one section per date with the date as an `h2` and the entries in a bordered list. Each entry shows the activity, the duration after a dot, and the notes below when present, with their line breaks kept. Checked in Chrome with temporary entries, deleted afterwards: "No exercise logged yet" with none; a new entry appeared with no page reload; two dates gave two headings, newest date first, and on the same date the newest entry came first; notes of two lines showed as two lines. Limit checked by adding 55 more rows straight into the database and requesting the page: 50 entries were shown and the oldest date was left out.
 
-### [ ] Task 5.4: Edit and delete an exercise entry
+### [x] Task 5.4: Edit and delete an exercise entry
 **Description**: Add edit and delete actions to each entry.
 **Files**: `components/exercise/exercise-row.tsx`, `components/exercise/exercise-form.tsx`, `components/exercise/exercise-list.tsx`, `app/exercise/actions.ts`
 **Acceptance criteria**:
@@ -455,6 +473,7 @@ Owner requirement: "It also tracks ... exercise.", confirmed by the owner as a "
 - Delete asks for confirmation; confirming removes the entry, cancelling changes nothing.
 - Changes remain after a page reload.
 - The standard checks pass. This completes the app.
+**Done notes**: `components/exercise/exercise-row.tsx` is a client component with the entry, the Edit dialog and the Delete dialog. Edit opens a dialog titled "Edit entry" with the form of Task 5.2 filled with the entry and a "Save" button; `ExerciseForm` takes an optional `entry` and `onSaved`, and the dialog closes when the change is saved. `updateExerciseEntryAction` uses the same validation as create and returns "This entry no longer exists." when the entry is gone; `deleteExerciseEntryAction` deletes and revalidates. The delete dialog names the activity and its duration and says it cannot be undone. Checked in Chrome with temporary entries, deleted afterwards: the dialog opened with the entry's values; a blank activity and a duration of 2000 showed their messages, kept the dialog open and changed nothing; changing the date, activity and duration and clearing the notes was saved, the dialog closed and the entry moved under the other date's heading; Cancel in the delete dialog left the entry in place; confirming removed it; the edit and the deletion were still there after a reload and in the database. The standard checks pass. Not checked: the light theme, and the dialogs at 375px width.
 
 ---
 

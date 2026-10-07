@@ -1,8 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { ActivityTotals } from "@/components/pomodoro/activity-totals";
+import { PeriodCounts } from "@/components/pomodoro/period-counts";
 import { PomodoroTimer } from "@/components/pomodoro/pomodoro-timer";
+import { TodaySummary } from "@/components/pomodoro/today-summary";
 import { listActiveActivities } from "@/lib/data/activities";
+import {
+  countPomodorosByActivity,
+  countPomodorosByDate,
+  countPomodorosOn,
+} from "@/lib/data/pomodoro";
+import {
+  countsByDay,
+  countsByMonth,
+  countsByWeek,
+  earliestStatsDay,
+} from "@/lib/pomodoro/stats";
+import { getToday } from "@/lib/today";
 
 export const metadata: Metadata = { title: "Pomodoro" };
 
@@ -10,7 +25,14 @@ export const metadata: Metadata = { title: "Pomodoro" };
 export const dynamic = "force-dynamic";
 
 export default async function PomodoroPage() {
-  const activities = await listActiveActivities();
+  const today = await getToday();
+  const [activities, todayCount, activityTotals, dayCounts] = await Promise.all([
+    listActiveActivities(),
+    countPomodorosOn(today),
+    countPomodorosByActivity(),
+    // One query covers the day, week and month views.
+    countPomodorosByDate(earliestStatsDay(today) ?? today, today),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -24,6 +46,15 @@ export default async function PomodoroPage() {
         </Link>
       </div>
       <PomodoroTimer activities={activities} />
+      <TodaySummary count={todayCount} />
+      <ActivityTotals totals={activityTotals} />
+      <PeriodCounts
+        counts={{
+          day: countsByDay(dayCounts, today),
+          week: countsByWeek(dayCounts, today),
+          month: countsByMonth(dayCounts, today),
+        }}
+      />
     </div>
   );
 }

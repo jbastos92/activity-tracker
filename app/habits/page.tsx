@@ -1,7 +1,26 @@
 import type { Metadata } from "next";
 
+import { HabitForm } from "@/components/habits/habit-form";
+import { HabitList } from "@/components/habits/habit-list";
+import { listHabitsWithCompletions } from "@/lib/data/habits";
+import { habitDays } from "@/lib/habits/days";
+import { getToday } from "@/lib/today";
+
 export const metadata: Metadata = { title: "Habits" };
 
-export default function HabitsPage() {
-  return <h1 className="text-2xl font-semibold">Habits</h1>;
+// Reads the database on every request.
+export const dynamic = "force-dynamic";
+
+export default async function HabitsPage() {
+  const today = await getToday();
+  const days = habitDays(today);
+  const habits = await listHabitsWithCompletions(days[0].date, today);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <h1 className="text-2xl font-semibold">Habits</h1>
+      <HabitForm />
+      <HabitList habits={habits} days={days} />
+    </div>
+  );
 }

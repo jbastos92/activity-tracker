@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+import { PomodoroProvider } from "@/components/pomodoro/pomodoro-provider";
 import { SiteHeader } from "@/components/site-header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TimeZoneCookie } from "@/components/time-zone-cookie";
@@ -36,10 +37,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           disableTransitionOnChange
         >
           <TimeZoneCookie />
-          <SiteHeader />
-          <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
-            {children}
-          </main>
+          <PomodoroProvider>
+            <SiteHeader />
+            <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
+              {children}
+            </main>
+          </PomodoroProvider>
         </ThemeProvider>
       </body>
     </html>

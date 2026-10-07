@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { ActivityPicker } from "@/components/pomodoro/activity-picker";
+import { NotificationStatus } from "@/components/pomodoro/notification-status";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLastActivityId, usePomodoroTimer } from "@/hooks/use-pomodoro-timer";
 import type { ActivitySummary } from "@/lib/data/activities";
+import { requestNotificationPermission } from "@/lib/pomodoro/notifications";
 import { type Phase, formatCountdown } from "@/lib/pomodoro/timer";
 
 const PHASE_LABELS: Record<Phase, string> = {
@@ -80,7 +82,12 @@ export function PomodoroTimer({ activities }: { activities: ActivitySummary[] })
           <Button
             size="lg"
             disabled={!canStart}
-            onClick={() => timer.start(isFocus ? (selected ?? undefined) : undefined)}
+            onClick={() => {
+              // Asks only while permission is undecided; the timer starts
+              // without waiting for the answer.
+              void requestNotificationPermission();
+              timer.start(isFocus ? (selected ?? undefined) : undefined);
+            }}
           >
             Start
           </Button>
@@ -95,6 +102,17 @@ export function PomodoroTimer({ activities }: { activities: ActivitySummary[] })
             Continue
           </Button>
         )}
+
+        {timer.saveError && (
+          <div role="alert" className="flex flex-col items-center gap-2">
+            <p className="max-w-sm text-sm text-destructive">{timer.saveError}</p>
+            <Button size="sm" variant="outline" onClick={timer.retrySave}>
+              Retry
+            </Button>
+          </div>
+        )}
+
+        <NotificationStatus />
       </CardContent>
     </Card>
   );
